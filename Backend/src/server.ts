@@ -10,11 +10,13 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import dbConnection from "./database/dbConnection.ts";
 import { errorMiddleware } from "./middlewares/errors.ts";
-import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
+import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.ts";
 import router from "./routers/index.ts";
+
 // Load environment variables from .env file
 dotenv.config();
+
 // Initialize Express app
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -23,7 +25,7 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONT_END || "http://localhost:5173/",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173/",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   }),
