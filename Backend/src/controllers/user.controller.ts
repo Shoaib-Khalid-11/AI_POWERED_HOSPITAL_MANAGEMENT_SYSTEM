@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { catchAsyncErrors } from "../middlewares/catchAsyncError";
 import ErrorHandler from "../middlewares/errors.ts";
+import { logActivity } from "../lib/activity.ts";
 
 export const getUserByID = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -64,6 +65,7 @@ export const updateUser = catchAsyncErrors(async (req, res, next) => {
     if (result.matchedCount === 0) {
       return next(new ErrorHandler("User not found", 404));
     }
+    await logActivity((req as any).user.id, "updateUser", `User updated ${id}`);
     res.json({
       message: "User updated successfully",
       updateUser: result,
