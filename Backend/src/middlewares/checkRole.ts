@@ -3,6 +3,7 @@ import { fromNodeHeaders } from "better-auth/node";
 import type { RoleEnum } from "../types/enums/user.enum";
 import { catchAsyncErrors } from "./catchAsyncError";
 import ErrorHandler from "./errors";
+import { cleanStores } from "better-auth/client";
 
 export const checkRole = (allowedRoles: RoleEnum[]) => {
   return catchAsyncErrors(async (req, res, next) => {
@@ -10,21 +11,18 @@ export const checkRole = (allowedRoles: RoleEnum[]) => {
       const session = await auth.api.getSession({
         headers: fromNodeHeaders(req.headers),
       });
-
       if (!session) {
-        // return res.status(401).json({ message: "Unauthorized" });
-        return new ErrorHandler("Unauthorized", 401);
+        return next(new ErrorHandler("Unauthorized", 401));
       }
 
       // Check if the user's role is in the allowed list
       // Note: The admin plugin adds the 'role' field to the user object
-      const userRole = (session.user as any).role;
+      const userRole: RoleEnum = (session.user as any).role;
 
       if (!allowedRoles.includes(userRole)) {
-        // return res
-        //   .status(403)
-        //   .json({ message: "Forbidden: Insufficient Permissions" });
-        return new ErrorHandler("Forbidden: Insufficient Permissions", 403);
+        return next(
+          new ErrorHandler("Forbidden: Insufficient Permissions", 403),
+        );
       }
 
       (req as any).user = session.user;

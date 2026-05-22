@@ -20,7 +20,6 @@ export const getUserByID = catchAsyncErrors(async (req, res, next) => {
       { _id: queryId as mongoose.Types.ObjectId },
       { projection: { password: 0 } },
     );
-    console.log(queryId);
 
     if (!user) {
       return next(new ErrorHandler("User not found", 404));
@@ -68,6 +67,50 @@ export const updateUser = catchAsyncErrors(async (req, res, next) => {
     res.json({
       message: "User updated successfully",
       updateUser: result,
+    });
+  } catch (error) {
+    next(new ErrorHandler("Server error", 500));
+  }
+});
+export const getAllUsers = catchAsyncErrors(async (req, res, next) => {
+  try {
+    //  Pagination Params (Default: Page 1, Limit 10)
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit as string) || 10);
+    const skip = (page - 1) * limit;
+    const filter: any = {};
+    const role = req.query.role as string;
+    // Only add role to filter if it exists and isn't empty/all
+    if (role && role !== "all" && role !== "") {
+      filter.role = role;
+    }
+
+    const collection = mongoose.connection.collection("user");
+    // total count for pagination
+    const totalUsers = await collection.countDocuments(filter);
+    const users = await collection
+      .find(
+        filter, // 👈 Just pass the filter directly now
+        {
+          projection: {
+            password: 0,
+            headers: 0,
+            emailVerified: 0,
+          },
+        },
+      )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+    res.json({
+      res: users,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalUsers / limit),
+        totalData: totalUsers,
+        limit,
+      },
     });
   } catch (error) {
     next(new ErrorHandler("Server error", 500));
